@@ -25,28 +25,4 @@ func main() {
 	// r.Mount("/admin", handler.AdminRouter(db))
 
 	log.Fatal(http.ListenAndServe(":5001", r))
-
-	// rows, err := db.Query("SELECT * FROM users")
-	// if err != nil {
-	// 	log.Fatal(err)
-	// }
-
-	// type User struct {
-	// 	uuid       string
-	// 	email      string
-	// 	hash       string
-	// 	username   sql.NullString
-	// 	avatar     string
-	// 	role       string
-	// 	created_at string
-	// }
-
-	// if rows.Next() {
-	// 	user := User{}
-	// 	if err := rows.Scan(&user.uuid, &user.email, &user.hash, &user.username, &user.avatar, &user.role, &user.created_at); err != nil {
-	// 		log.Fatal(err)
-	// 	}
-	// 	fmt.Printf("%+v", user.username)
-	// }
-
 }
