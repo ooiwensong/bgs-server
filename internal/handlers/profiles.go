@@ -43,9 +43,10 @@ func getUserProfile(db *sql.DB) http.HandlerFunc {
 		}
 
 		q := `
-SELECT email, username, avatar, created_at
-FROM users
-WHERE uuid=$1`
+			SELECT email, username, avatar, created_at
+			FROM users
+			WHERE uuid=$1
+			`
 
 		row := db.QueryRow(q, body["userId"])
 
