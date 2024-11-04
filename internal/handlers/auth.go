@@ -162,6 +162,7 @@ func refresh() http.HandlerFunc {
 		}
 
 		if claims, ok := token.Claims.(*Claims); ok {
+			claims := generateClaims(claims.UserId, claims.Email, claims.Role, claims.Avatar, claims.Username)
 			token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
 			accessToken, err := token.SignedString([]byte(os.Getenv("ACCESS_SECRET")))
 			if err != nil {
