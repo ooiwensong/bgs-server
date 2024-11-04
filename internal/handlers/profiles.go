@@ -110,8 +110,8 @@ func editUserProfile(db *sql.DB) http.HandlerFunc {
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusCreated)
 		json.NewEncoder(w).Encode(struct {
-			Status string
-			Msg    string
+			Status string `json:"struct"`
+			Msg    string `json:"msg"`
 		}{
 			"ok",
 			"user profile updated successfully",

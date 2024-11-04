@@ -3,17 +3,10 @@ package db
 import (
 	"database/sql"
 	"fmt"
-	"log"
 	"os"
-
-	"github.com/joho/godotenv"
 )
 
 func Open() (*sql.DB, error) {
-	err := godotenv.Load()
-	if err != nil {
-		log.Fatal("error loading .env file")
-	}
 
 	var (
 		pgHost     = os.Getenv("PGHOST")
