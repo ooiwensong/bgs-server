@@ -72,10 +72,10 @@ func getUserProfile(db *sql.DB) http.HandlerFunc {
 			u.Username = nil
 		}
 
-		w.Header().Set("Content-Type", "application/json")
+		generate200Response(w, http.StatusOK)
 		err = json.NewEncoder(w).Encode(u)
 		if err != nil {
-			log.Fatal(err)
+			http.Error(w, "something went wrong", http.StatusInternalServerError)
 		}
 	}
 }
@@ -109,12 +109,15 @@ func editUserProfile(db *sql.DB) http.HandlerFunc {
 		}
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusCreated)
-		json.NewEncoder(w).Encode(struct {
+		err = json.NewEncoder(w).Encode(struct {
 			Status string `json:"struct"`
 			Msg    string `json:"msg"`
 		}{
 			"ok",
 			"user profile updated successfully",
 		})
+		if err != nil {
+			http.Error(w, "something went wrong", http.StatusInternalServerError)
+		}
 	}
 }

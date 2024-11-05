@@ -34,3 +34,13 @@ func generateClaims(userId, email, role, avatar string, username *string) Claims
 		},
 	}
 }
+
+func generateOKJsonMsg(w http.ResponseWriter, msg string) {
+	json.NewEncoder(w).Encode(struct {
+		Status string `json:"status"`
+		Msg    string `json:"msg"`
+	}{
+		"ok",
+		msg,
+	})
+}
