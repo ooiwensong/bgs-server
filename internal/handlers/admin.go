@@ -6,10 +6,13 @@ import (
 	"net/http"
 
 	"github.com/go-chi/chi/v5"
+	"github.com/ooiwensong/bgs_server/internal/middlewares"
 )
 
 func AdminRouter(db *sql.DB) chi.Router {
 	r := chi.NewRouter()
+
+	r.Use(middlewares.AuthAdmin)
 
 	r.Get("/users", getAllUsers(db))
 	r.Patch("/users", updateUserRole(db))

@@ -8,6 +8,7 @@ import (
 
 	"github.com/go-chi/chi/v5"
 	"github.com/lib/pq"
+	"github.com/ooiwensong/bgs_server/internal/middlewares"
 )
 
 type Sessions struct {
@@ -30,6 +31,8 @@ type Sessions struct {
 
 func SessionsRouter(db *sql.DB) chi.Router {
 	r := chi.NewRouter()
+
+	r.Use(middlewares.Auth)
 
 	r.Post("/", getSingleSession(db))
 	r.Put("/", createSession(db))
@@ -83,7 +86,6 @@ func getSingleSession(db *sql.DB) http.HandlerFunc {
 		var s SessionData
 		err = row.Scan(&s.Uuid, &s.HostId, &s.GameTitle, &s.MaxGuests, &s.NumGuests, &s.Date, &s.StartTime, &s.EndTime, &s.Address, &s.IsFull, &s.ExpiresAt, &s.CreatedAt, &s.LastUpdated, &s.GameImage)
 		if err != nil {
-			fmt.Print(err.Error())
 			http.Error(w, "error retrieving session data", http.StatusBadRequest)
 			return
 		}
@@ -95,7 +97,6 @@ func getSingleSession(db *sql.DB) http.HandlerFunc {
 		`
 		rows, err := tx.Query(q, body["sessionId"])
 		if err != nil {
-			fmt.Print(err)
 			http.Error(w, "error retrieving session data", http.StatusBadRequest)
 		}
 		type SessionGuests struct {
@@ -134,11 +135,15 @@ func getSingleSession(db *sql.DB) http.HandlerFunc {
 
 func createSession(db *sql.DB) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		// TODO: check against claims
-
 		body, err := decodeReqBody(r)
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusBadRequest)
+		}
+
+		userId := r.Context().Value("decoded").(*middlewares.Claims).UserId
+		if userId != body["userId"] {
+			http.Error(w, "not authorised", http.StatusUnauthorized)
+			return
 		}
 
 		q := `
@@ -183,7 +188,12 @@ func editSession(db *sql.DB) http.HandlerFunc {
 			http.Error(w, "error updating session", http.StatusBadRequest)
 			return
 		}
-		// TODO: check claims against hostId
+
+		userId := r.Context().Value("decoded").(*middlewares.Claims).UserId
+		if hostId != userId {
+			http.Error(w, "not authorised", http.StatusUnauthorized)
+			return
+		}
 
 		for attribute, value := range body {
 			q := fmt.Sprintf(`
@@ -233,7 +243,12 @@ func deleteSession(db *sql.DB) http.HandlerFunc {
 			http.Error(w, "error deleting session", http.StatusBadRequest)
 			return
 		}
-		// TODO: check against claims
+
+		userId := r.Context().Value("decoded").(*middlewares.Claims).UserId
+		if hostId != userId {
+			http.Error(w, "not authorised", http.StatusBadRequest)
+			return
+		}
 
 		q = `
 		DELETE FROM sessions
@@ -373,11 +388,14 @@ func getOtherUserSessions(db *sql.DB) http.HandlerFunc {
 
 func leaveSession(db *sql.DB) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		// TODO: check against claims
-
 		body, err := decodeReqBody(r)
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusBadRequest)
+			return
+		}
+		userId := r.Context().Value("decoded").(*middlewares.Claims).UserId
+		if userId != body["userId"] {
+			http.Error(w, "not authorised", http.StatusBadRequest)
 			return
 		}
 
@@ -410,11 +428,14 @@ func leaveSession(db *sql.DB) http.HandlerFunc {
 
 func joinSession(db *sql.DB) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		// TODO: check claims
-
 		body, err := decodeReqBody(r)
 		if err != nil {
 			http.Error(w, "error joining session", http.StatusBadRequest)
+			return
+		}
+		userId := r.Context().Value("decoded").(*middlewares.Claims).UserId
+		if userId != body["userId"] {
+			http.Error(w, "not authorised", http.StatusBadRequest)
 			return
 		}
 
@@ -432,8 +453,8 @@ func joinSession(db *sql.DB) http.HandlerFunc {
 		`
 		row := tx.QueryRow(q, body["sessionId"])
 		var hostId string
-		var IsFull bool
-		if err = row.Scan(&hostId, IsFull); err != nil {
+		var isFull bool
+		if err = row.Scan(&hostId, &isFull); err != nil {
 			http.Error(w, "error joining session", http.StatusBadRequest)
 			return
 		}
@@ -441,7 +462,7 @@ func joinSession(db *sql.DB) http.HandlerFunc {
 			http.Error(w, "cannot join a session you are hosting", http.StatusBadRequest)
 			return
 		}
-		if IsFull {
+		if isFull {
 			http.Error(w, "cannot join a session as it is full", http.StatusBadRequest)
 			return
 		}

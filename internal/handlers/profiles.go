@@ -8,6 +8,7 @@ import (
 	"net/http"
 
 	"github.com/go-chi/chi/v5"
+	"github.com/ooiwensong/bgs_server/internal/middlewares"
 )
 
 type User struct {
@@ -17,16 +18,10 @@ type User struct {
 	CreatedAt *string `json:"created_at"`
 }
 
-// if rows.Next() {
-// 	user := User{}
-// 	if err := rows.Scan(&user.uuid, &user.email, &user.hash, &user.username, &user.avatar, &user.role, &user.created_at); err != nil {
-// 		log.Fatal(err)
-// 	}
-// 	fmt.Printf("%+v", user.username)
-// }
-
 func ProfilesRouter(db *sql.DB) chi.Router {
 	r := chi.NewRouter()
+
+	r.Use(middlewares.Auth)
 
 	r.Post("/", getUserProfile(db))
 	r.Patch("/", editUserProfile(db))
@@ -85,6 +80,11 @@ func editUserProfile(db *sql.DB) http.HandlerFunc {
 		body, err := decodeReqBody(r)
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusBadRequest)
+			return
+		}
+		userId := r.Context().Value("decode").(*middlewares.Claims).UserId
+		if userId != body["userId"] {
+			http.Error(w, "not authorised", http.StatusBadRequest)
 			return
 		}
 
