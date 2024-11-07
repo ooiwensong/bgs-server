@@ -25,7 +25,7 @@ func main() {
 	r := chi.NewRouter()
 
 	r.Mount("/auth", handlers.AuthRouter(db))
-	// r.Mount("/api/sessions", handlers.SessionsRouter(db))
+	r.Mount("/api/sessions", handlers.SessionsRouter(db))
 	r.Mount("/api/profiles", handlers.ProfilesRouter(db))
 	r.Mount("/api/library", handlers.LibrayRouter(db))
 	r.Mount("/admin", handlers.AdminRouter(db))
